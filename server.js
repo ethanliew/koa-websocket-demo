@@ -2,31 +2,44 @@ const Koa = require('koa');
 const route = require('koa-route');
 const websockify = require('koa-websocket');
 const logger = require('koa-logger');
+const port = process.env.PORT || 3000;
+
+
+const WebSocket = require('ws');
 const app = websockify(new Koa());
-const port = process.env.PORT || 3000
 
 // Regular middleware
 // Note it's app.ws.use and not app.use
 app.ws.use(function (ctx, next) {
+  //console.log(ctx.query.id);
   // return `next` to pass the context (ctx) on to the next ws middleware
   return next(ctx);
 });
 
-app.use(logger())
+app.use(logger());
 
 
-// Using routes
-app.ws.use(route.all('/ws/:id', function (ctx) {
+//
+// nodejs web socket example
+//
+// const wss = new WebSocket.Server({ port: port });
+// wss.on('connection', ws => {
+//   ws.on('message', message => {
+//     console.log(`Received message => ${message}`)
+//   })
+//   ws.send('ho! from server');
+// });
+
+
+app.ws.use(route.all('/:id', function (ctx) {
   // `ctx` is the regular koa context created from the `ws` onConnection `socket.upgradeReq` object.
   // the websocket is added to the context on `ctx.websocket`.
-  ctx.websocket.send('Hello World' + id);
   ctx.websocket.on('message', function (message) {
-    // do something with the message from client
-    console.log(message);
+    console.log(`Received message => ${message}`);
+    ctx.websocket.send("Msg from server");
   });
 }));
 
-
 const listener = app.listen(port, function () {
   console.log('Your app is listening on port ' + listener.address().port)
-})
+});
